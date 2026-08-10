@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "uXoQlWuEA7Q=",
+  "dgSpecHash": "IqOYT0gV5Hs=",
   "success": true,
-  "projectFilePath": "C:\\Users\\jesus\\Downloads\\InventoryAPI (1)\\InventoryAPI\\InventoryAPI.csproj",
+  "projectFilePath": "D:\\Luis_program\\Inventory-Stock-Control\\InventoryAPI\\InventoryAPI.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\jesus\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.10\\microsoft.aspnetcore.openapi.10.0.10.nupkg.sha512",
     "C:\\Users\\jesus\\.nuget\\packages\\microsoft.extensions.apidescription.server\\10.0.0\\microsoft.extensions.apidescription.server.10.0.0.nupkg.sha512",

@@ -504,11 +504,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\jesus\\Downloads\\InventoryAPI (1)\\InventoryAPI\\InventoryAPI.csproj",
+      "projectUniqueName": "D:\\Luis_program\\Inventory-Stock-Control\\InventoryAPI\\InventoryAPI.csproj",
       "projectName": "InventoryAPI",
-      "projectPath": "C:\\Users\\jesus\\Downloads\\InventoryAPI (1)\\InventoryAPI\\InventoryAPI.csproj",
+      "projectPath": "D:\\Luis_program\\Inventory-Stock-Control\\InventoryAPI\\InventoryAPI.csproj",
       "packagesPath": "C:\\Users\\jesus\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\jesus\\Downloads\\InventoryAPI (1)\\InventoryAPI\\obj\\",
+      "outputPath": "D:\\Luis_program\\Inventory-Stock-Control\\InventoryAPI\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

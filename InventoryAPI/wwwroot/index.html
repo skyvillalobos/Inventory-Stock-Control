@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventario de Productos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f7fb;
+      color: #1d1f27;
+    }
+    header {
+      background: #5a0d6d;
+      color: white;
+      padding: 24px 32px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    main {
+      padding: 24px 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    h1, h2 {
+      margin: 0 0 16px;
+    }
+    form {
+      display: grid;
+      gap: 16px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #ccd6e3;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #3f51b5;
+      border: none;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background .2s ease;
+    }
+    button:hover {
+      background: #8d0707;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    th, td {
+      padding: 14px 12px;
+      border-bottom: 1px solid #e8edf5;
+      text-align: left;
+    }
+    th {
+      background: #f5f8ff;
+      font-weight: 700;
+    }
+    .status {
+      padding: 6px 10px;
+      border-radius: 999px;
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .status.high { background: #dff8e1; color: #287a2a; }
+    .status.low { background: #ffe5e1; color: #b43a2d; }
+    .actions button {
+      margin-right: 10px;
+      margin-bottom: 6px;
+      background: #5c6ac4;
+    }
+    .actions button.delete {
+      background: #d32f2f;
+    }
+    .actions button.stock {
+      background: #1976d2;
+    }
+    .message {
+      padding: 14px 18px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .message.success { background: #e8f7e9; color: #1c5d2d; }
+    .message.error { background: #fbeaea; color: #7a1a1a; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Inventario de Productos</h1>
+    <p>Administra productos, stock y elimina artículos cuando sea necesario.</p>
+  </header>
+  <main>
+    <div class="card">
+      <div class="message" id="message"></div>
+      <h2>Agregar o editar producto</h2>
+      <form id="productForm">
+        <input type="hidden" id="productId" />
+        <div>
+          <label for="name">Nombre</label>
+          <input id="name" type="text" placeholder="Ej. Teclado mecánico" required />
+        </div>
+        <div>
+          <label for="price">Precio</label>
+          <input id="price" type="number" step="0.01" min="0" placeholder="Ej. 350.00" required />
+        </div>
+        <div>
+          <label for="currentStock">Stock actual</label>
+          <input id="currentStock" type="number" min="0" placeholder="Ej. 12" required />
+        </div>
+        <div>
+          <label for="minimumStock">Stock mínimo</label>
+          <input id="minimumStock" type="number" min="0" placeholder="Ej. 5" required />
+        </div>
+        <button type="submit">Guardar producto</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Productos</h2>
+      <button id="reloadButton">Actualizar lista</button>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Stock mínimo</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="productsTable"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    const apiBase = '/api/products';
+    const messageEl = document.getElementById('message');
+    const form = document.getElementById('productForm');
+    const productIdInput = document.getElementById('productId');
+    const nameInput = document.getElementById('name');
+    const priceInput = document.getElementById('price');
+    const currentStockInput = document.getElementById('currentStock');
+    const minimumStockInput = document.getElementById('minimumStock');
+    const productsTable = document.getElementById('productsTable');
+    const reloadButton = document.getElementById('reloadButton');
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      const id = productIdInput.value;
+      if (id) {
+        await updateProduct(Number(id));
+      } else {
+        await createProduct();
+      }
+    });
+
+    reloadButton.addEventListener('click', loadProducts);
+
+    async function loadProducts() {
+      try {
+        const response = await fetch(apiBase);
+        const products = await response.json();
+        renderProducts(products);
+      } catch (error) {
+        showMessage('Error al cargar los productos.', 'error');
+      }
+    }
+
+    function renderProducts(products) {
+      productsTable.innerHTML = '';
+      if (!products || products.length === 0) {
+        productsTable.innerHTML = '<tr><td colspan="7">No hay productos registrados.</td></tr>';
+        return;
+      }
+
+      products.forEach(product => {
+        const statusClass = product.currentStock <= product.minimumStock ? 'low' : 'high';
+        const statusText = product.currentStock <= product.minimumStock ? 'Bajo stock' : 'Stock suficiente';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${product.id}</td>
+          <td>${product.name}</td>
+          <td>$${product.price.toFixed(2)}</td>
+          <td>${product.currentStock}</td>
+          <td>${product.minimumStock}</td>
+          <td><span class="status ${statusClass}">${statusText}</span></td>
+          <td class="actions">
+            <button class="stock" onclick="promptAddStock(${product.id})">Agregar stock</button>
+            <button onclick="editProduct(${product.id})">Editar</button>
+            <button class="delete" onclick="deleteProduct(${product.id})">Eliminar</button>
+          </td>
+        `;
+        productsTable.appendChild(row);
+      });
+    }
+
+    async function createProduct() {
+      const product = gatherFormValues();
+      try {
+        const response = await fetch(apiBase, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(product)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          return showMessage(error.message || 'No se pudo crear el producto.', 'error');
+        }
+
+        resetForm();
+        showMessage('Producto creado correctamente.', 'success');
+        await loadProducts();
+      } catch (error) {
+        showMessage('Error al crear el producto.', 'error');
+      }
+    }
+
+    async function updateProduct(id) {
+      const product = gatherFormValues();
+      try {
+        const response = await fetch(`${apiBase}/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(product)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          return showMessage(error.message || 'No se pudo actualizar el producto.', 'error');
+        }
+
+        resetForm();
+        showMessage('Producto actualizado correctamente.', 'success');
+        await loadProducts();
+      } catch (error) {
+        showMessage('Error al actualizar el producto.', 'error');
+      }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('¿Eliminar este producto?')) return;
+      try {
+        const response = await fetch(`${apiBase}/${id}`, { method: 'DELETE' });
+        const result = await response.json();
+        if (!response.ok) {
+          return showMessage(result.message || 'No se pudo eliminar el producto.', 'error');
+        }
+        showMessage(result.message || 'Producto eliminado.', 'success');
+        await loadProducts();
+      } catch (error) {
+        showMessage('Error al eliminar el producto.', 'error');
+      }
+    }
+
+    async function promptAddStock(id) {
+      const quantity = parseInt(prompt('Cantidad para agregar al stock:'), 10);
+      if (!quantity || quantity <= 0) {
+        return showMessage('Ingresa una cantidad válida mayor que cero.', 'error');
+      }
+
+      try {
+        const response = await fetch(`${apiBase}/${id}/add-stock`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quantity })
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          return showMessage(result.message || 'No se pudo agregar stock.', 'error');
+        }
+        showMessage(result.message || 'Stock agregado.', 'success');
+        await loadProducts();
+      } catch (error) {
+        showMessage('Error al agregar stock.', 'error');
+      }
+    }
+
+    async function editProduct(id) {
+      try {
+        const response = await fetch(`${apiBase}/${id}`);
+        if (!response.ok) {
+          const error = await response.json();
+          return showMessage(error.message || 'No se encontró el producto.', 'error');
+        }
+        const product = await response.json();
+        productIdInput.value = product.id;
+        nameInput.value = product.name;
+        priceInput.value = product.price;
+        currentStockInput.value = product.currentStock;
+        minimumStockInput.value = product.minimumStock;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (error) {
+        showMessage('Error al cargar el producto para editar.', 'error');
+      }
+    }
+
+    function gatherFormValues() {
+      return {
+        name: nameInput.value.trim(),
+        price: parseFloat(priceInput.value) || 0,
+        currentStock: parseInt(currentStockInput.value, 10) || 0,
+        minimumStock: parseInt(minimumStockInput.value, 10) || 0
+      };
+    }
+
+    function resetForm() {
+      productIdInput.value = '';
+      form.reset();
+    }
+
+    function showMessage(text, type) {
+      messageEl.textContent = text;
+      messageEl.className = `message ${type}`;
+      messageEl.style.display = 'block';
+      setTimeout(() => messageEl.style.display = 'none', 4500);
+    }
+
+    loadProducts();
+  </script>
+</body>
+</html>
